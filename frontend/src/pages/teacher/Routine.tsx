@@ -1,34 +1,26 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 const Routine = () => {
     const { user, loading: authLoading } = useAuth();
     const [routines, setRoutines] = useState<any[]>([]);
+    const [assignments, setAssignments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    // Hierarchical Data
-    const [faculties, setFaculties] = useState<any[]>([]);
-    const [batches, setBatches] = useState<any[]>([]);
-    const [sections, setSections] = useState<any[]>([]);
-    const [subjects, setSubjects] = useState<any[]>([]);
-
     // Form state
-    const [selectedFacultyId, setSelectedFacultyId] = useState("");
-    const [selectedBatchId, setSelectedBatchId] = useState("");
-    const [selectedSectionId, setSelectedSectionId] = useState("");
-    const [selectedSubjectId, setSelectedSubjectId] = useState("");
+    const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
@@ -36,103 +28,38 @@ const Routine = () => {
 
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    const [isStructureLoading, setIsStructureLoading] = useState(false);
-    const [structureError, setStructureError] = useState<string | null>(null);
-
-    const fetchGlobalData = async () => {
-        setIsStructureLoading(true);
-        setStructureError(null);
-
-        const fetchWithTimeout = async (promise: Promise<any>, name: string) => {
-            const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error(`${name} fetch timed out`)), 5000)
-            );
-            return Promise.race([promise, timeout]);
-        };
-
-        try {
-            console.log('🔄 Routine: Starting sequential structure fetch...');
-
-            // Remove the inner .catch suppression to see the actual error (e.g. Permission Denied)
-            const f = await fetchWithTimeout(api.getFaculties(), 'Faculties');
-            setFaculties(f || []);
-
-            const b = await fetchWithTimeout(api.getBatches(), 'Batches');
-            setBatches(b || []);
-
-            const s = await fetchWithTimeout(api.getSections(), 'Sections');
-            setSections(s || []);
-
-            const sub = await fetchWithTimeout(api.getSubjects(), 'Subjects');
-            setSubjects(sub || []);
-
-            console.log('✅ Routine: Structure load complete', {
-                faculties: f?.length || 0
-            });
-
-            if (!f || f.length === 0) {
-                setStructureError("No departments found in database. Check RLS policies.");
-            }
-
-        } catch (e: any) {
-            console.error('❌ Routine: Global meta-load failed', e);
-            // This will now show the actual Supabase error if RLS or connection fails
-            const errorMsg = e.message || e.details || "Failed to load database structure";
-            setStructureError(errorMsg);
-            toast.error(`Database Error: ${errorMsg}`);
-        } finally {
-            setIsStructureLoading(false);
+    useEffect(() => {
+        if (!authLoading && user?.teacher_id) {
+            fetchData();
+        } else if (!authLoading) {
+            setIsLoading(false);
         }
-    };
+    }, [authLoading, user?.teacher_id]);
 
-    const fetchTeacherRoutines = async () => {
-        if (!user?.teacher_id) {
-            console.warn('⚠️ Routine: Skipping fetch, no teacher_id yet', user);
-            return;
-        }
-
+    const fetchData = async () => {
+        if (!user?.teacher_id) return;
         setIsLoading(true);
         try {
-            console.log('🔄 Routine: Fetching for teacher_id:', user.teacher_id);
-            const allRoutines = await api.getRoutines({ teacher_id: user.teacher_id });
-            console.log('✅ Routine: Data received:', allRoutines);
-
-            setRoutines(allRoutines || []);
-
-            if (allRoutines && allRoutines.length > 0) {
-                toast.info(`Loaded ${allRoutines.length} routines`);
-            }
+            const [myAssignments, myRoutines] = await Promise.all([
+                api.getTeacherAssignments(user.teacher_id),
+                api.getRoutines({ teacher_id: user.teacher_id })
+            ]);
+            setAssignments(myAssignments || []);
+            setRoutines(myRoutines || []);
         } catch (e: any) {
-            console.error('❌ Routine: Failed to load routines', e);
             toast.error(`Load error: ${e.message || "Unknown error"}`);
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        if (!authLoading) {
-            fetchGlobalData();
-        }
-    }, [authLoading]);
-
-    useEffect(() => {
-        if (!authLoading && user?.teacher_id) {
-            fetchTeacherRoutines();
-        } else if (!authLoading) {
-            setIsLoading(false);
-        }
-    }, [authLoading, user?.teacher_id]);
-
-    const filteredBatches = batches.filter(b => b.faculty_id === selectedFacultyId);
-    const filteredSections = sections.filter(s => s.batch_id === selectedBatchId);
-    const filteredSubjects = subjects.filter(sub => sub.section_id === selectedSectionId);
-
     const handleSave = async () => {
-        if (!selectedSubjectId || selectedDays.length === 0) {
-            toast.error("Please select a subject and at least one day");
+        if (!selectedAssignmentId || selectedDays.length === 0) {
+            toast.error("Please select assignment and days");
             return;
         }
+        const selectedAssignment = assignments.find(a => a.id === selectedAssignmentId);
+        if (!selectedAssignment) return;
 
         try {
             const promises = selectedDays.map(day => {
@@ -140,38 +67,35 @@ const Routine = () => {
                     day_of_week: day,
                     start_time: startTime || null,
                     end_time: endTime || null,
-                    subject_id: selectedSubjectId,
+                    subject_id: selectedAssignment.subject_id,
                     teacher_id: user.teacher_id,
                     room_id: roomId || 'TBD'
                 };
                 return api.createRoutine(newRoutine);
             });
-
             await Promise.all(promises);
             setIsDialogOpen(false);
             resetForm();
-            toast.success("Routine added successfully");
-            fetchTeacherRoutines();
+            toast.success("Routine added!");
+            fetchData();
         } catch (e) {
-            toast.error("Failed to add routine. Check for conflicts.");
+            toast.error("Failed to add routine");
         }
     };
 
     const handleDelete = async (id: string) => {
+        if (!confirm("Remove this routine?")) return;
         try {
             await api.deleteResource('routines', id);
             toast.success("Routine removed");
-            fetchTeacherRoutines();
+            fetchData();
         } catch (e) {
-            toast.error("Failed to delete routine");
+            toast.error("Failed to delete");
         }
     };
 
     const resetForm = () => {
-        setSelectedFacultyId("");
-        setSelectedBatchId("");
-        setSelectedSectionId("");
-        setSelectedSubjectId("");
+        setSelectedAssignmentId("");
         setSelectedDays([]);
         setStartTime("");
         setEndTime("");
@@ -184,100 +108,54 @@ const Routine = () => {
         );
     };
 
-    const sortedRoutines = [...routines].sort((a, b) => {
-        const dayDiff = days.indexOf(a.day_of_week) - days.indexOf(b.day_of_week);
-        if (dayDiff !== 0) return dayDiff;
-        if (!a.start_time) return -1;
-        if (!b.start_time) return 1;
-        return a.start_time.localeCompare(b.start_time);
-    });
+    const routinesByDay = days.map(day => ({
+        day,
+        items: routines.filter(r => r.day_of_week === day).sort((a, b) => {
+            if (!a.start_time) return -1;
+            if (!b.start_time) return 1;
+            return a.start_time.localeCompare(b.start_time);
+        })
+    })).filter(group => group.items.length > 0);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 md:space-y-6 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Class Routine</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Manage your weekly class schedule.
-                    </p>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Class Routine</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Manage your weekly schedule</p>
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="gap-2">
+                        <Button className="gap-2 w-full sm:w-auto" disabled={assignments.length === 0}>
                             <Plus className="w-4 h-4" />
                             Set Routine
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto mx-4">
                         <DialogHeader>
                             <DialogTitle>Add New Routine</DialogTitle>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Set class timings</p>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            {/* Hierarchy Selection */}
-                            <div className="space-y-3">
-                                <div className="grid gap-2">
-                                    <Label>Department</Label>
-                                    <Select value={selectedFacultyId} onValueChange={(v) => { setSelectedFacultyId(v); setSelectedBatchId(""); setSelectedSectionId(""); setSelectedSubjectId(""); }}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Department" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {isStructureLoading ? (
-                                                <SelectItem value="loading" disabled>Loading departments...</SelectItem>
-                                            ) : structureError ? (
-                                                <SelectItem value="error" disabled className="text-destructive font-medium">
-                                                    {structureError}
-                                                </SelectItem>
-                                            ) : faculties.length > 0 ? (
-                                                faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>No departments found</SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label>Batch</Label>
-                                    <Select value={selectedBatchId} onValueChange={(v) => { setSelectedBatchId(v); setSelectedSectionId(""); setSelectedSubjectId(""); }} disabled={!selectedFacultyId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Batch" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredBatches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label>Section</Label>
-                                    <Select value={selectedSectionId} onValueChange={(v) => { setSelectedSectionId(v); setSelectedSubjectId(""); }} disabled={!selectedBatchId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Section" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredSections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label>Subject</Label>
-                                    <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId} disabled={!selectedSectionId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Subject" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredSubjects.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                        <div className="grid gap-3 py-2">
+                            <div className="grid gap-2">
+                                <Label className="text-sm">Select Assignment *</Label>
+                                <Select value={selectedAssignmentId} onValueChange={setSelectedAssignmentId}>
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue placeholder="Choose subject" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {assignments.map(a => (
+                                            <SelectItem key={a.id} value={a.id} className="text-sm">
+                                                {a.subject?.name} - {a.subject?.section?.batch?.name} {a.subject?.section?.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            {/* Multi-day Selection */}
                             <div className="grid gap-2">
-                                <Label>Select Days</Label>
-                                <div className="grid grid-cols-2 gap-2 p-3 border rounded-md">
+                                <Label className="text-sm">Select Days *</Label>
+                                <div className="grid grid-cols-2 gap-2 p-2 border rounded-md">
                                     {days.map(d => (
                                         <div key={d} className="flex items-center space-x-2">
                                             <Checkbox
@@ -285,7 +163,7 @@ const Routine = () => {
                                                 checked={selectedDays.includes(d)}
                                                 onCheckedChange={() => toggleDay(d)}
                                             />
-                                            <label htmlFor={`day-${d}`} className="text-sm font-medium leading-none cursor-pointer">
+                                            <label htmlFor={`day-${d}`} className="text-xs sm:text-sm font-medium cursor-pointer">
                                                 {d}
                                             </label>
                                         </div>
@@ -293,98 +171,125 @@ const Routine = () => {
                                 </div>
                             </div>
 
-                            {/* Optional Time & Room */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-2">
-                                    <Label className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" /> Start Time
-                                        <span className="text-[10px] text-muted-foreground ml-auto">(Optional)</span>
+                                    <Label className="text-xs sm:text-sm flex items-center gap-1">
+                                        <Clock className="w-3 h-3" /> Start
                                     </Label>
-                                    <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                                    <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-9 text-sm" />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" /> End Time
-                                        <span className="text-[10px] text-muted-foreground ml-auto">(Optional)</span>
+                                    <Label className="text-xs sm:text-sm flex items-center gap-1">
+                                        <Clock className="w-3 h-3" /> End
                                     </Label>
-                                    <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                                    <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="h-9 text-sm" />
                                 </div>
                             </div>
 
                             <div className="grid gap-2">
-                                <Label>Room Number</Label>
-                                <Input value={roomId} onChange={(e) => setRoomId(e.target.value)} placeholder="e.g. 301" />
+                                <Label className="text-xs sm:text-sm flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" /> Room
+                                </Label>
+                                <Input value={roomId} onChange={(e) => setRoomId(e.target.value)} placeholder="e.g. 301" className="h-9" />
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                            <Button onClick={handleSave} disabled={!selectedSubjectId || selectedDays.length === 0}>Save Routine</Button>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none">Cancel</Button>
+                            <Button onClick={handleSave} disabled={!selectedAssignmentId || selectedDays.length === 0} className="flex-1 sm:flex-none">Save</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Weekly Schedule</CardTitle>
-                    <CardDescription>Your current class timings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {!isLoading ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Day</TableHead>
-                                    <TableHead>Time</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Batch & Section</TableHead>
-                                    <TableHead>Room</TableHead>
-                                    <TableHead className="text-right">Action</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedRoutines.length > 0 ? (
-                                    sortedRoutines.map((routine) => (
-                                        <TableRow key={routine.id}>
-                                            <TableCell className="font-medium">{routine.day_of_week}</TableCell>
-                                            <TableCell>
-                                                {routine.start_time ? (
-                                                    `${routine.start_time.slice(0, 5)} - ${routine.end_time?.slice(0, 5)}`
-                                                ) : (
-                                                    <span className="text-muted-foreground text-xs italic">Flexible</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{routine.subject?.name}</TableCell>
-                                            <TableCell>
-                                                {routine.subject?.section?.batch?.name} - {routine.subject?.section?.name}
-                                            </TableCell>
-                                            <TableCell>{routine.room_id}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => handleDelete(routine.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                            No routines set. Click "Set Routine" to start.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+            {!isLoading ? (
+                assignments.length > 0 ? (
+                    routinesByDay.length > 0 ? (
+                        <div className="space-y-4 md:space-y-6">
+                            {routinesByDay.map(({ day, items }) => (
+                                <Card key={day}>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center justify-between text-base md:text-lg">
+                                            <span className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                                                {day}
+                                            </span>
+                                            <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {items.map((routine) => (
+                                                <div key={routine.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 border rounded-lg">
+                                                    <div className="flex-1 min-w-0 space-y-1">
+                                                        <div className="font-medium truncate text-sm">{routine.subject?.name}</div>
+                                                        <div className="text-xs text-muted-foreground truncate">
+                                                            {routine.subject?.section?.batch?.name} - {routine.subject?.section?.name}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+                                                        <div className="flex items-center gap-2">
+                                                            {routine.start_time ? (
+                                                                <Badge variant="outline" className="text-xs whitespace-nowrap px-2">
+                                                                    <Clock className="w-3 h-3 mr-1" />
+                                                                    {routine.start_time.slice(0, 5)}-{routine.end_time?.slice(0, 5)}
+                                                                </Badge>
+                                                            ) : (
+                                                                <span className="text-muted-foreground italic">Flexible</span>
+                                                            )}
+                                                            <Badge variant="outline" className="text-xs whitespace-nowrap px-2">
+                                                                <MapPin className="w-3 h-3 mr-1" />
+                                                                {routine.room_id}
+                                                            </Badge>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive hover:bg-destructive/10 h-7 w-7 shrink-0"
+                                                            onClick={() => handleDelete(routine.id)}
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     ) : (
-                        <div className="text-center py-8 text-muted-foreground">Loading routine...</div>
-                    )}
-                </CardContent>
-            </Card>
+                        <Card>
+                            <CardContent className="py-12 text-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <Calendar className="w-12 h-12 md:w-14 md:h-14 text-muted-foreground" />
+                                    <div className="space-y-1 px-4">
+                                        <h3 className="font-semibold text-base md:text-lg">No Routines Set</h3>
+                                        <p className="text-xs sm:text-sm text-muted-foreground">
+                                            Tap "Set Routine" to create schedules
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                ) : (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <Calendar className="w-12 h-12 md:w-14 md:h-14 text-muted-foreground" />
+                                <div className="space-y-1 px-4">
+                                    <h3 className="font-semibold text-base md:text-lg">No Assignments Found</h3>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">
+                                        Add assignments in "Batches" first
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            ) : (
+                <div className="text-center py-8 text-sm text-muted-foreground">Loading...</div>
+            )}
         </div>
     );
 };

@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { User, Mail, Hash, Book, Layers, CheckCircle, XCircle, ScanFace } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,40 +37,40 @@ const StudentProfile = () => {
         }
     };
 
-    if (isLoading) return <div className="py-12 text-center text-muted-foreground">Loading profile...</div>;
-    if (!student) return <div className="py-12 text-center text-muted-foreground">Student record not found. Please contact administrator.</div>;
+    if (isLoading) return <div className="py-12 text-center text-sm text-muted-foreground">Loading profile...</div>;
+    if (!student) return <div className="py-12 text-center text-sm text-muted-foreground">Student record not found. Please contact administrator.</div>;
 
     const ProfileItem = ({ icon: Icon, label, value, subValue }: any) => (
-        <div className="flex items-center p-4 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
-            <div className="p-3 rounded-full bg-primary/10 mr-4">
-                <Icon className="w-6 h-6 text-primary" />
+        <div className="flex items-center p-3 sm:p-4 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+            <div className="p-2 sm:p-3 rounded-full bg-primary/10 mr-3 sm:mr-4 shrink-0">
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
-            <div>
-                <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                <p className="font-semibold text-lg">{value}</p>
-                {subValue && <p className="text-xs text-muted-foreground">{subValue}</p>}
+            <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">{label}</p>
+                <p className="font-semibold text-base sm:text-lg truncate">{value}</p>
+                {subValue && <p className="text-xs text-muted-foreground truncate">{subValue}</p>}
             </div>
         </div>
     );
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-                <p className="text-muted-foreground mt-2">
-                    View your academic identity and registration status.
+        <div className="space-y-4 sm:space-y-6 pb-6">
+            <div className="px-1">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
+                <p className="text-sm text-muted-foreground mt-1 sm:mt-2">
+                    View your academic identity and registration status
                 </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <User className="w-5 h-5 text-primary" />
+                    <CardHeader className="pb-3 sm:pb-6">
+                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                            <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                             Personal Information
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-2">
+                    <CardContent className="grid gap-3 sm:gap-4 md:grid-cols-2">
                         <ProfileItem
                             icon={User}
                             label="Full Name"
@@ -91,13 +90,13 @@ const StudentProfile = () => {
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Layers className="w-5 h-5 text-primary" />
+                    <CardHeader className="pb-3 sm:pb-6">
+                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                            <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                             Academic Details
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 sm:space-y-4">
                         <ProfileItem
                             icon={Book}
                             label="Batch"
@@ -112,27 +111,27 @@ const StudentProfile = () => {
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ScanFace className="w-5 h-5 text-primary" />
+                    <CardHeader className="pb-3 sm:pb-6">
+                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                            <ScanFace className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                             Face Registration
                         </CardTitle>
-                        <CardDescription>Status of your biometric registration.</CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">Status of your biometric registration</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center py-6">
+                    <CardContent className="flex flex-col items-center justify-center py-4 sm:py-6">
                         {student.face_registered ? (
-                            <div className="text-center space-y-3">
-                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                                    <CheckCircle className="w-8 h-8 text-green-600" />
+                            <div className="text-center space-y-3 w-full px-2">
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                                    <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
                                 </div>
                                 <div>
-                                    <h3 className="font-medium text-lg text-green-700">Registration Complete</h3>
-                                    <p className="text-sm text-green-600">Your face data is active for attendance.</p>
+                                    <h3 className="font-medium text-base sm:text-lg text-green-700">Registration Complete</h3>
+                                    <p className="text-xs sm:text-sm text-green-600">Your face data is active for attendance</p>
                                 </div>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="mt-2"
+                                    className="mt-2 w-full sm:w-auto"
                                     onClick={handleRegisterFace}
                                 >
                                     <ScanFace className="w-4 h-4 mr-2" />
@@ -140,19 +139,19 @@ const StudentProfile = () => {
                                 </Button>
                             </div>
                         ) : (
-                            <div className="text-center space-y-3">
-                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                                    <XCircle className="w-8 h-8 text-red-600" />
+                            <div className="text-center space-y-3 w-full px-2">
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                                    <XCircle className="w-7 h-7 sm:w-8 sm:h-8 text-red-600" />
                                 </div>
                                 <div>
-                                    <h3 className="font-medium text-lg text-red-700">Not Registered</h3>
-                                    <p className="text-sm text-red-600">Please register your face to enable attendance.</p>
+                                    <h3 className="font-medium text-base sm:text-lg text-red-700">Not Registered</h3>
+                                    <p className="text-xs sm:text-sm text-red-600">Please register your face to enable attendance</p>
                                 </div>
                                 <Button
-                                    className="mt-2"
+                                    className="mt-2 w-full sm:w-auto"
                                     onClick={handleRegisterFace}
                                 >
-                                    <ScanFace className="w-5 h-5 mr-2" />
+                                    <ScanFace className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                     Register My Face
                                 </Button>
                             </div>

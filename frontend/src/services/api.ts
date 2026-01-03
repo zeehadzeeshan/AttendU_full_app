@@ -152,6 +152,33 @@ export const api = {
     return data;
   },
 
+  createTeacherAssignment: async (teacherId: string, subjectId: string) => {
+    const { data, error } = await supabase
+      .from('teacher_assignments')
+      .insert([{ teacher_id: teacherId, subject_id: subjectId }])
+      .select(`
+        *,
+        subject:subjects(
+          *,
+          section:sections(
+            *,
+            batch:batches(*)
+          )
+        )
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  deleteTeacherAssignment: async (assignmentId: string) => {
+    const { error } = await supabase
+      .from('teacher_assignments')
+      .delete()
+      .eq('id', assignmentId);
+    if (error) throw error;
+  },
+
   getStudentsBySection: async (sectionId: string) => {
     const { data, error } = await supabase
       .from('students')

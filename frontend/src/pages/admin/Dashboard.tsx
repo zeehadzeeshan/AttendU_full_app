@@ -74,22 +74,22 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8 pb-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                <p className="text-muted-foreground">
-                    System overview and daily statistics.
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">
+                    System overview and daily statistics
                 </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {statCards.map((stat, index) => (
                     <Card key={index} className="border-border hover:border-primary/50 transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
+                            <CardTitle className="text-sm font-medium truncate">
                                 {stat.title}
                             </CardTitle>
-                            <div className={`p-2 rounded-md ${stat.bg}`}>
+                            <div className={`p-2 rounded-md ${stat.bg} shrink-0`}>
                                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
                             </div>
                         </CardHeader>

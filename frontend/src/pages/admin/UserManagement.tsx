@@ -81,19 +81,19 @@ const UserManagement = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-4 sm:space-y-6 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-                    <p className="text-muted-foreground">
-                        Manage students and teachers access.
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h2>
+                    <p className="text-sm sm:text-base text-muted-foreground mt-1">
+                        Manage students and teachers access
                     </p>
                 </div>
-                <div className="relative w-full md:w-72">
+                <div className="relative w-full sm:w-72">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search users..."
-                        className="pl-8"
+                        className="pl-8 h-9 sm:h-10 text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -102,36 +102,36 @@ const UserManagement = () => {
 
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-                    <TabsTrigger value="students" className="gap-2">
-                        <Users className="w-4 h-4" /> Students
+                    <TabsTrigger value="students" className="gap-2 text-sm">
+                        <Users className="w-4 h-4" /> <span className="hidden sm:inline">Students</span><span className="sm:hidden">Students</span>
                     </TabsTrigger>
-                    <TabsTrigger value="teachers" className="gap-2">
-                        <GraduationCap className="w-4 h-4" /> Teachers
+                    <TabsTrigger value="teachers" className="gap-2 text-sm">
+                        <GraduationCap className="w-4 h-4" /> <span className="hidden sm:inline">Teachers</span><span className="sm:hidden">Teachers</span>
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="students" className="mt-6">
-                    <div className="rounded-md border bg-card">
+                <TabsContent value="students" className="mt-4 sm:mt-6">
+                    <div className="rounded-md border bg-card overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Student ID</TableHead>
-                                    <TableHead>Name</TableHead>
+                                    <TableHead className="min-w-[100px]">Student ID</TableHead>
+                                    <TableHead className="min-w-[150px]">Name</TableHead>
                                     <TableHead className="hidden md:table-cell">Batch</TableHead>
                                     <TableHead className="hidden md:table-cell">Section</TableHead>
-                                    <TableHead>Face Reg</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead className="min-w-[100px]">Face Reg</TableHead>
+                                    <TableHead className="min-w-[80px]">Status</TableHead>
+                                    <TableHead className="text-right min-w-[70px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => (
                                     <TableRow key={student.id}>
-                                        <TableCell className="font-mono">{student.student_id}</TableCell>
-                                        <TableCell>
+                                        <TableCell className="font-mono text-xs sm:text-sm">{student.student_id}</TableCell>
+                                        <TableCell className="min-w-0">
                                             <div className="flex flex-col">
-                                                <span className="font-medium">{student.profile?.name}</span>
-                                                <span className="text-xs text-muted-foreground">{student.profile?.email}</span>
+                                                <span className="font-medium text-sm truncate max-w-[150px] sm:max-w-none">{student.profile?.name}</span>
+                                                <span className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">{student.profile?.email}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
@@ -142,16 +142,16 @@ const UserManagement = () => {
                                         </TableCell>
                                         <TableCell>
                                             {student.face_registered ? (
-                                                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200">Registered</Badge>
+                                                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200 text-xs whitespace-nowrap">Registered</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200">Pending</Badge>
+                                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200 text-xs whitespace-nowrap">Pending</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell>
                                             {student.is_active ? (
-                                                <Badge variant="default" className="bg-green-600">Active</Badge>
+                                                <Badge variant="default" className="bg-green-600 text-xs whitespace-nowrap">Active</Badge>
                                             ) : (
-                                                <Badge variant="destructive">Disabled</Badge>
+                                                <Badge variant="destructive" className="text-xs whitespace-nowrap">Disabled</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -176,26 +176,26 @@ const UserManagement = () => {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="teachers" className="mt-6">
-                    <div className="rounded-md border bg-card">
+                <TabsContent value="teachers" className="mt-4 sm:mt-6">
+                    <div className="rounded-md border bg-card overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Teacher ID</TableHead>
-                                    <TableHead>Name</TableHead>
+                                    <TableHead className="min-w-[100px]">Teacher ID</TableHead>
+                                    <TableHead className="min-w-[150px]">Name</TableHead>
                                     <TableHead className="hidden md:table-cell">Subjects</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead className="min-w-[80px]">Status</TableHead>
+                                    <TableHead className="text-right min-w-[70px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredTeachers.map((teacher) => (
                                     <TableRow key={teacher.id}>
-                                        <TableCell className="font-mono">{teacher.employee_id || `T-${teacher.id.slice(0, 4)}`}</TableCell>
-                                        <TableCell>
+                                        <TableCell className="font-mono text-xs sm:text-sm">{teacher.employee_id || `T-${teacher.id.slice(0, 4)}`}</TableCell>
+                                        <TableCell className="min-w-0">
                                             <div className="flex flex-col">
-                                                <span className="font-medium">{teacher.profile?.name}</span>
-                                                <span className="text-xs text-muted-foreground">{teacher.profile?.email}</span>
+                                                <span className="font-medium text-sm truncate max-w-[150px] sm:max-w-none">{teacher.profile?.name}</span>
+                                                <span className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">{teacher.profile?.email}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
@@ -203,9 +203,9 @@ const UserManagement = () => {
                                         </TableCell>
                                         <TableCell>
                                             {teacher.is_active ? (
-                                                <Badge variant="default" className="bg-green-600">Active</Badge>
+                                                <Badge variant="default" className="bg-green-600 text-xs whitespace-nowrap">Active</Badge>
                                             ) : (
-                                                <Badge variant="destructive">Disabled</Badge>
+                                                <Badge variant="destructive" className="text-xs whitespace-nowrap">Disabled</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">

@@ -256,14 +256,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      setUser(null);
-      setRole(null);
-      setIsAuthenticated(false);
-    }
+  const logout = () => {
+    // Clear local state immediately for instant logout
+    setUser(null);
+    setRole(null);
+    setIsAuthenticated(false);
+    setSelectedRole(null);
+
+    // Sign out from Supabase in background (don't wait)
+    supabase.auth.signOut().catch(err => {
+      console.warn('Signout cleanup failed (non-critical):', err);
+    });
   };
 
   const completeFaceStore = async (userId: string, embedding?: number[]) => {

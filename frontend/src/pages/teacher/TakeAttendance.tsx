@@ -18,17 +18,8 @@ const TakeAttendance = () => {
 
     // Steps: 'select' -> 'camera' -> 'verify' -> 'success'
     const [step, setStep] = useState<'select' | 'camera' | 'verify' | 'success'>('select');
-    const [routines, setRoutines] = useState<any[]>([]);
-    const [selectedRoutineId, setSelectedRoutineId] = useState("");
-    const [faculties, setFaculties] = useState<any[]>([]);
-    const [batches, setBatches] = useState<any[]>([]);
-    const [sections, setSections] = useState<any[]>([]);
-    const [subjects, setSubjects] = useState<any[]>([]);
-
-    const [selectedFacultyId, setSelectedFacultyId] = useState("");
-    const [selectedBatchId, setSelectedBatchId] = useState("");
-    const [selectedSectionId, setSelectedSectionId] = useState("");
-    const [selectedSubjectId, setSelectedSubjectId] = useState("");
+    const [assignments, setAssignments] = useState<any[]>([]);
+    const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
 
     const [attendanceData, setAttendanceData] = useState<{ studentId: string; status: 'present' | 'absent'; name: string; student_id: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -66,36 +57,24 @@ const TakeAttendance = () => {
         loadModels();
     }, []);
 
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = days[new Date().getDay()];
-
     useEffect(() => {
-        const fetchStructure = async () => {
-            if (authLoading) return;
+        const fetchAssignments = async () => {
+            if (authLoading || !user?.teacher_id) {
+                setIsLoading(false);
+                return;
+            }
             setIsLoading(true);
             try {
-                const [f, b, s, sub] = await Promise.all([
-                    api.getFaculties(),
-                    api.getBatches(),
-                    api.getSections(),
-                    api.getSubjects()
-                ]);
-                setFaculties(f);
-                setBatches(b);
-                setSections(s);
-                setSubjects(sub);
+                const data = await api.getTeacherAssignments(user.teacher_id);
+                setAssignments(data || []);
             } catch (e) {
-                toast.error("Failed to load department structure");
+                toast.error("Failed to load your assignments");
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchStructure();
-    }, [authLoading]);
-
-    const filteredBatches = batches.filter(b => b.faculty_id === selectedFacultyId);
-    const filteredSections = sections.filter(s => s.batch_id === selectedBatchId);
-    const filteredSubjects = subjects.filter(sub => sub.section_id === selectedSectionId);
+        fetchAssignments();
+    }, [authLoading, user?.teacher_id]);
 
     // Not used anymore - recognition done on backend
     // Kept for reference
@@ -337,13 +316,19 @@ const TakeAttendance = () => {
     };
 
     const handleStartCamera = async () => {
-        if (!selectedSubjectId) {
-            toast.error("Please select a subject first");
+        if (!selectedAssignmentId) {
+            toast.error("Please select an assignment first");
+            return;
+        }
+
+        const selectedAssignment = assignments.find(a => a.id === selectedAssignmentId);
+        if (!selectedAssignment) {
+            toast.error("Invalid assignment selected");
             return;
         }
 
         try {
-            const students = await api.getStudentsBySection(selectedSectionId);
+            const students = await api.getStudentsBySection(selectedAssignment.subject?.section_id);
             allStudentsRef.current = students; // Store for later
             setStep('camera');
 
@@ -367,7 +352,6 @@ const TakeAttendance = () => {
         }
     };
 
-    // ... toggleAttendance, handleSubmit, reset ...
     const toggleAttendance = (studentId: string) => {
         setAttendanceData(prev => prev.map(record =>
             record.studentId === studentId
@@ -377,14 +361,15 @@ const TakeAttendance = () => {
     };
 
     const handleSubmit = async () => {
-        if (!selectedSubjectId) return;
+        const selectedAssignment = assignments.find(a => a.id === selectedAssignmentId);
+        if (!selectedAssignment) return;
 
         setIsLoading(true);
         try {
             const logs = attendanceData.map(d => ({
                 student_id: d.studentId,
                 routine_id: null, // No specific routine matches manual session
-                subject_id: selectedSubjectId,
+                subject_id: selectedAssignment.subject_id,
                 date: new Date().toISOString().split('T')[0],
                 status: d.status,
                 confidence: d.status === 'present' ? 0.95 : 0
@@ -402,85 +387,79 @@ const TakeAttendance = () => {
 
     const reset = () => {
         setStep('select');
-        setSelectedFacultyId("");
-        setSelectedBatchId("");
-        setSelectedSectionId("");
-        setSelectedSubjectId("");
+        setSelectedAssignmentId("");
         setAttendanceData([]);
     };
 
     if (step === 'select') {
-        const filteredBatches = batches.filter(b => b.faculty_id === selectedFacultyId);
-        const filteredSections = sections.filter(s => s.batch_id === selectedBatchId);
-        const filteredSubjects = subjects.filter(sub => sub.section_id === selectedSectionId);
-
         return (
             <div className="max-w-xl mx-auto space-y-6">
                 <div className="text-center space-y-2">
                     <h1 className="text-3xl font-bold tracking-tight">Take Attendance</h1>
-                    <p className="text-muted-foreground">Select a class from your routine today.</p>
+                    <p className="text-muted-foreground">Select a class to start taking attendance.</p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Class Selection</CardTitle>
+                        <CardTitle>Select Class</CardTitle>
                         <CardDescription>
-                            Select the academic structure for this session.
+                            Choose from your assigned subjects.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label>Department</Label>
-                                <Select value={selectedFacultyId} onValueChange={(v) => { setSelectedFacultyId(v); setSelectedBatchId(""); setSelectedSectionId(""); setSelectedSubjectId(""); }}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Department" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        {!isLoading ? (
+                            assignments.length > 0 ? (
+                                <div className="grid gap-2">
+                                    <Label>Your Assignments</Label>
+                                    <Select value={selectedAssignmentId} onValueChange={setSelectedAssignmentId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a subject" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {assignments.map(a => (
+                                                <SelectItem key={a.id} value={a.id}>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{a.subject?.name}</span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {a.subject?.section?.batch?.name} • Section {a.subject?.section?.name}
+                                                        </span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
 
-                            <div className="grid gap-2">
-                                <Label>Batch</Label>
-                                <Select value={selectedBatchId} onValueChange={(v) => { setSelectedBatchId(v); setSelectedSectionId(""); setSelectedSubjectId(""); }} disabled={!selectedFacultyId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Batch" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {filteredBatches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label>Section</Label>
-                                <Select value={selectedSectionId} onValueChange={(v) => { setSelectedSectionId(v); setSelectedSubjectId(""); }} disabled={!selectedBatchId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Section" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {filteredSections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label>Subject</Label>
-                                <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId} disabled={!selectedSectionId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {filteredSubjects.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+                                    {selectedAssignmentId && (() => {
+                                        const selected = assignments.find(a => a.id === selectedAssignmentId);
+                                        return selected ? (
+                                            <div className="text-sm bg-muted p-3 rounded-md space-y-1">
+                                                <div className="font-semibold">{selected.subject?.name}</div>
+                                                <div className="text-muted-foreground">
+                                                    Code: {selected.subject?.code}
+                                                </div>
+                                                <div className="text-muted-foreground">
+                                                    {selected.subject?.section?.batch?.name} - Section {selected.subject?.section?.name}
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <p>No assignments found.</p>
+                                    <p className="text-sm mt-2">Please add assignments in the "Batches" page first.</p>
+                                </div>
+                            )
+                        ) : (
+                            <div className="text-center py-4 text-muted-foreground">Loading assignments...</div>
+                        )}
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full" onClick={handleStartCamera} disabled={!selectedSubjectId || isLoading}>
+                        <Button
+                            className="w-full"
+                            onClick={handleStartCamera}
+                            disabled={!selectedAssignmentId || isLoading || assignments.length === 0}
+                        >
                             <Camera className="mr-2 h-4 w-4" />
                             {isLoading ? "Loading..." : "Start Camera"}
                         </Button>
