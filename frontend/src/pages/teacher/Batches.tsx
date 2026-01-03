@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, BookOpen, Plus, Trash2, GraduationCap } from "lucide-react";
+import { Users, BookOpen, Plus, Trash2, GraduationCap, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
     Table,
     TableBody,
@@ -29,6 +30,7 @@ const Batches = () => {
     const [isFetchingStudents, setIsFetchingStudents] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Hierarchical Data for Add Dialog
     const [faculties, setFaculties] = useState<any[]>([]);
@@ -225,71 +227,88 @@ const Batches = () => {
                 </Dialog>
             </div>
 
-            {!isLoading ? (
-                assignedClasses.length > 0 ? (
-                    <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                        {assignedClasses.map((assignment) => (
-                            <Card
-                                key={assignment.id}
-                                className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group"
-                            >
-                                <CardHeader className="space-y-1 pb-3">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <CardTitle className="flex items-center gap-2 text-base md:text-lg leading-tight">
-                                            <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
-                                            <span className="truncate">{assignment.subject?.name}</span>
-                                        </CardTitle>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 opacity- group-hover:opacity-100 transition-opacity h-8 w-8 shrink-0"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteAssignment(assignment.id);
-                                            }}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
+            <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search your classes..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+
+            {
+                !isLoading ? (
+                    assignedClasses.length > 0 ? (
+                        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                            {assignedClasses
+                                .filter(a =>
+                                    a.subject?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    a.subject?.code?.toLowerCase().includes(searchQuery.toLowerCase())
+                                )
+                                .map((assignment) => (
+                                    <Card
+                                        key={assignment.id}
+                                        className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group"
+                                    >
+                                        <CardHeader className="space-y-1 pb-3">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <CardTitle className="flex items-center gap-2 text-base md:text-lg leading-tight">
+                                                    <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
+                                                    <span className="truncate">{assignment.subject?.name}</span>
+                                                </CardTitle>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 opacity- group-hover:opacity-100 transition-opacity h-8 w-8 shrink-0"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteAssignment(assignment.id);
+                                                    }}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
+                                            <CardDescription className="text-xs truncate">
+                                                {assignment.subject?.code}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="pt-0" onClick={() => handleClassClick(assignment)}>
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                                    <GraduationCap className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                                    <span className="font-medium truncate">{assignment.subject?.section?.batch?.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                                    <Users className="w-3.5 h-3.5 shrink-0" />
+                                                    <span className="truncate">Section {assignment.subject?.section?.name}</span>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardContent className="py-12 text-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="w-14 h-14 md:w-16 md:h-16 bg-muted rounded-full flex items-center justify-center">
+                                        <BookOpen className="w-7 h-7 md:w-8 md:h-8 text-muted-foreground" />
                                     </div>
-                                    <CardDescription className="text-xs truncate">
-                                        {assignment.subject?.code}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0" onClick={() => handleClassClick(assignment)}>
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2 text-xs sm:text-sm">
-                                            <GraduationCap className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                            <span className="font-medium truncate">{assignment.subject?.section?.batch?.name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                                            <Users className="w-3.5 h-3.5 shrink-0" />
-                                            <span className="truncate">Section {assignment.subject?.section?.name}</span>
-                                        </div>
+                                    <div className="space-y-1 px-4">
+                                        <h3 className="font-semibold text-base md:text-lg">No Assignments Yet</h3>
+                                        <p className="text-xs sm:text-sm text-muted-foreground">
+                                            Tap "Add Assignment" to start
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
                 ) : (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="w-14 h-14 md:w-16 md:h-16 bg-muted rounded-full flex items-center justify-center">
-                                    <BookOpen className="w-7 h-7 md:w-8 md:h-8 text-muted-foreground" />
-                                </div>
-                                <div className="space-y-1 px-4">
-                                    <h3 className="font-semibold text-base md:text-lg">No Assignments Yet</h3>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">
-                                        Tap "Add Assignment" to start
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="py-12 text-center text-sm">Loading...</div>
                 )
-            ) : (
-                <div className="py-12 text-center text-sm">Loading...</div>
-            )}
+            }
 
             <Dialog open={!!selectedClass} onOpenChange={(open) => !open && setSelectedClass(null)}>
                 <DialogContent className="max-w-3xl max-h-[90vh] mx-4">
@@ -348,7 +367,7 @@ const Batches = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 };
 

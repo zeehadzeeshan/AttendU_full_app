@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
+import { Plus, Trash2, Clock, MapPin, Calendar, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ const Routine = () => {
     const [assignments, setAssignments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Form state
     const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
@@ -110,11 +111,18 @@ const Routine = () => {
 
     const routinesByDay = days.map(day => ({
         day,
-        items: routines.filter(r => r.day_of_week === day).sort((a, b) => {
-            if (!a.start_time) return -1;
-            if (!b.start_time) return 1;
-            return a.start_time.localeCompare(b.start_time);
-        })
+        items: routines
+            .filter(r => r.day_of_week === day)
+            .filter(r =>
+                r.subject?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                r.subject?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                r.room_id?.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .sort((a, b) => {
+                if (!a.start_time) return -1;
+                if (!b.start_time) return 1;
+                return a.start_time.localeCompare(b.start_time);
+            })
     })).filter(group => group.items.length > 0);
 
     return (
@@ -199,6 +207,16 @@ const Routine = () => {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            </div>
+
+            <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search routine..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
 
             {!isLoading ? (
