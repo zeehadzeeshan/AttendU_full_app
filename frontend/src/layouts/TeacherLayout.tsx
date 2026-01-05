@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Footer } from '@/components/ui/Footer';
 
 const TeacherLayout = () => {
@@ -82,6 +82,7 @@ const TeacherLayout = () => {
             {/* Mobile Sidebar */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetContent side="left" className="w-64 p-0 flex flex-col">
+                    <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
                     <SidebarContent mobile />
                 </SheetContent>
             </Sheet>

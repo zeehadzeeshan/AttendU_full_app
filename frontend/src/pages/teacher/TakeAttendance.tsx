@@ -278,6 +278,8 @@ const TakeAttendance = () => {
         }
     }
 
+    const autoStopTimer = useRef<NodeJS.Timeout | null>(null);
+
     const initializeTracking = (students: any[]) => {
         if (!videoRef.current) {
             toast.error("Camera not ready for tracking");
@@ -311,6 +313,14 @@ const TakeAttendance = () => {
         // knownEmbeddingsRef.current = knownEmbeddings;
         setIsTracking(true);
 
+        // 2. Auto-Stop Timeout (10 seconds)
+        if (autoStopTimer.current) clearTimeout(autoStopTimer.current);
+        autoStopTimer.current = setTimeout(() => {
+            console.log("⏰ Auto-stop timeout (10s) reached.");
+            toast.info("Auto-stopped after 10 seconds.");
+            finalizeAttendance();
+        }, 10000);
+
         detectionInterval.current = setInterval(async () => {
             if (!videoRef.current || !canvasRef.current) return;
 
@@ -338,7 +348,8 @@ const TakeAttendance = () => {
                 const result = await api.recognizeFaces(blob);
                 setBackendStatus('online'); // Connection verified
 
-                setDetectedCount(result.detected_faces || 0);
+                const detected = result.detected_faces || 0;
+                setDetectedCount(detected);
 
                 // Update recognized students
                 if (result.matches && result.matches.length > 0) {
@@ -362,6 +373,15 @@ const TakeAttendance = () => {
                     setRecognizedCount(recognizedStudentsRef.current.size);
                 }
 
+                // 1. Auto-Stop Condition: Everyone visible is recognized
+                const recognizedCountNow = recognizedStudentsRef.current.size;
+                if (detected > 0 && recognizedCountNow >= detected) {
+                    console.log("✅ Auto-stop: All detected faces recognized.");
+                    toast.success("All visible faces recognized!");
+                    if (autoStopTimer.current) clearTimeout(autoStopTimer.current);
+                    finalizeAttendance();
+                }
+
                 // Optional: Draw detection boxes using face-api.js for visual feedback
                 if (modelsLoaded && canvasRef.current && videoRef.current) {
                     const detections = await faceapi.detectAllFaces(
@@ -381,8 +401,6 @@ const TakeAttendance = () => {
                 toast.error("AI Server connection lost. Please check your internet or retry.");
             }
         }, 800); // Slightly slower interval for stability
-
-        // Auto-complete timeout REMOVED to allow manual batch processing
     };
 
     const stopTracking = () => {
@@ -495,7 +513,12 @@ const TakeAttendance = () => {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Select Class</CardTitle>
+                        <CardTitle className="flex justify-between items-center">
+                            Select Class
+                            <Button variant="outline" size="sm" onClick={() => { toast.promise(api.syncFaces(), { loading: 'Syncing AI Database...', success: 'AI Database Synced', error: 'Sync Failed' }) }}>
+                                <RefreshCw className="w-3 h-3 mr-2" /> Sync AI
+                            </Button>
+                        </CardTitle>
                         <CardDescription>
                             Choose from your assigned subjects.
                         </CardDescription>

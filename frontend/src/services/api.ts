@@ -490,8 +490,14 @@ export const api = {
             confidence: result.confidence || 0.95 // Fallback confidence
           }]
         };
+      } else if (result.message === "Unknown face" || result.distance !== undefined) {
+        // Face detected but not matched
+        return {
+          detected_faces: 1,
+          matches: []
+        };
       } else {
-        // No match found or no face detected
+        // No face detected at all
         return {
           detected_faces: 0,
           matches: []
@@ -527,6 +533,16 @@ export const api = {
     } catch (error) {
       console.error('Error calling Python backend:', error);
       throw error;
+    }
+  },
+
+  syncFaces: async () => {
+    const PYTHON_BACKEND = 'https://arefintitly-attendu-server.hf.space';
+    try {
+      await fetch(`${PYTHON_BACKEND}/api/face/sync`, { method: 'POST' });
+      console.log('🔄 Triggered backend FAISS sync');
+    } catch (e) {
+      console.error("Failed to trigger sync:", e);
     }
   }
 };

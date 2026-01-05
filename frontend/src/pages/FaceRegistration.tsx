@@ -353,9 +353,20 @@ const FaceRegistration = () => {
 
       console.log(`📊 Averaged ${finalEmbeddings.length} embeddings`);
 
+      // Normalization Step (Critical for L2/Cosine Match)
+      const magnitude = Math.sqrt(averageEmbedding.reduce((sum, val) => sum + val * val, 0));
+      if (magnitude > 0) {
+        for (let i = 0; i < averageEmbedding.length; i++) {
+          averageEmbedding[i] /= magnitude;
+        }
+        console.log(`📏 Normalized average embedding (Magnitude: ${magnitude.toFixed(4)} -> 1.0000)`);
+      }
+
       const result = await completeFaceRegistration(user.id, averageEmbedding);
       if (result.success) {
         setStage('success');
+        // Trigger backend sync so it knows about the new student immediately
+        api.syncFaces();
       } else {
         setStage('error');
       }
