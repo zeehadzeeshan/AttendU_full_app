@@ -139,7 +139,8 @@ async def recognize_face(image: UploadFile = File(...)):
         
         # Logic for "Match Found" defined by threshold
         # ArcFace L2 < 1.0 is usually a strong match
-        THRESHOLD = 1.0 
+        # Relaxed to 1.25 to accommodate real-world lighting/angles
+        THRESHOLD = 1.25 
         
         if student_id and distance < THRESHOLD:
             return {

@@ -492,6 +492,8 @@ export const api = {
         };
       } else if (result.message === "Unknown face" || result.distance !== undefined) {
         // Face detected but not matched
+        console.warn(`📉 Match Failed: Distance ${result.distance?.toFixed(4)} (Threshold was strict)`);
+
         return {
           detected_faces: 1,
           matches: []

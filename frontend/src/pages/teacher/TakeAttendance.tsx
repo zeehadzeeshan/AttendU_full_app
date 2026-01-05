@@ -313,22 +313,28 @@ const TakeAttendance = () => {
         // knownEmbeddingsRef.current = knownEmbeddings;
         setIsTracking(true);
 
-        // 2. Auto-Stop Timeout (10 seconds)
+        // 2. Auto-Stop Timeout (20 seconds) - Increased to avoid race conditions with slow backend
         if (autoStopTimer.current) clearTimeout(autoStopTimer.current);
         autoStopTimer.current = setTimeout(() => {
-            console.log("⏰ Auto-stop timeout (10s) reached.");
-            toast.info("Auto-stopped after 10 seconds.");
+            console.log("⏰ Auto-stop timeout (20s) reached.");
+            toast.info("Auto-stopped after 20 seconds.");
             finalizeAttendance();
-        }, 10000);
+        }, 20000);
 
         detectionInterval.current = setInterval(async () => {
-            if (!videoRef.current || !canvasRef.current) return;
+            // Early check
+            if (!videoRef.current || !canvasRef.current || !active) return;
 
             try {
                 // Capture current video frame
                 const canvas = document.createElement('canvas');
-                canvas.width = videoRef.current.videoWidth;
-                canvas.height = videoRef.current.videoHeight;
+                if (videoRef.current) {
+                    canvas.width = videoRef.current.videoWidth;
+                    canvas.height = videoRef.current.videoHeight;
+                } else {
+                    return;
+                }
+
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
 
@@ -339,6 +345,8 @@ const TakeAttendance = () => {
                     canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.8);
                 });
 
+                if (!videoRef.current || !active) return; // Check again after await
+
                 if (!blob) {
                     console.warn("⚠️ Could not capture frame blob, skipping...");
                     return;
@@ -346,6 +354,9 @@ const TakeAttendance = () => {
 
                 // Send to Python backend for recognition
                 const result = await api.recognizeFaces(blob);
+
+                if (!videoRef.current || !active) return; // Check again after network request
+
                 setBackendStatus('online'); // Connection verified
 
                 const detected = result.detected_faces || 0;
@@ -380,25 +391,31 @@ const TakeAttendance = () => {
                     toast.success("All visible faces recognized!");
                     if (autoStopTimer.current) clearTimeout(autoStopTimer.current);
                     finalizeAttendance();
+                    return;
                 }
 
                 // Optional: Draw detection boxes using face-api.js for visual feedback
                 if (modelsLoaded && canvasRef.current && videoRef.current) {
-                    const detections = await faceapi.detectAllFaces(
-                        videoRef.current,
-                        new faceapi.TinyFaceDetectorOptions()
-                    );
-                    const displaySize = { width: videoRef.current.offsetWidth, height: videoRef.current.offsetHeight };
-                    faceapi.matchDimensions(canvasRef.current, displaySize);
-                    const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                    canvasRef.current.getContext('2d')?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
+                    try {
+                        const detections = await faceapi.detectAllFaces(
+                            videoRef.current,
+                            new faceapi.TinyFaceDetectorOptions()
+                        );
+                        if (canvasRef.current && videoRef.current) {
+                            const displaySize = { width: videoRef.current.offsetWidth, height: videoRef.current.offsetHeight };
+                            faceapi.matchDimensions(canvasRef.current, displaySize);
+                            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                            canvasRef.current.getContext('2d')?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                            faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
+                        }
+                    } catch (err) {
+                        // Ignore resize errors if component unmounted
+                    }
                 }
             } catch (e) {
                 console.error('Detection error:', e);
                 setBackendStatus('error');
-                stopTracking(); // Pause on connection error
-                toast.error("AI Server connection lost. Please check your internet or retry.");
+                // stopTracking(); // Don't stop entirely on one error, just retry
             }
         }, 800); // Slightly slower interval for stability
     };
