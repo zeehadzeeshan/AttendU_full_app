@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Camera, CheckCircle, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
+import { Camera, CheckCircle, RefreshCw, AlertCircle, XCircle, Scan, Fingerprint, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 import * as faceapi from 'face-api.js';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -165,15 +165,15 @@ const FaceRegistration = () => {
           if (noseHistory.current.length > 5) noseHistory.current.shift();
 
           const stability = noseHistory.current.length >= 5 ? calculateStability(noseHistory.current) : 100;
-          const stable = stability < 2.5; // Threshold for "still"
+          const stable = stability < 3.5; // Threshold for "still" (Relaxed from 2.5)
           setIsStable(stable);
 
           if (isCentered && !isCapturingAuto && stable) {
-            if (livenessStep === 'front' && Math.abs(currentYaw - 0.5) < 0.1) {
+            if (livenessStep === 'front' && Math.abs(currentYaw - 0.5) < 0.12) {
               autoCaptureBurst('front');
-            } else if (livenessStep === 'left' && currentYaw > 0.65) {
+            } else if (livenessStep === 'left' && currentYaw > 0.6) {
               autoCaptureBurst('left');
-            } else if (livenessStep === 'right' && currentYaw < 0.35) {
+            } else if (livenessStep === 'right' && currentYaw < 0.4) {
               autoCaptureBurst('right');
             }
           }
@@ -432,34 +432,101 @@ const FaceRegistration = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg animate-fade-in">
-        <Card className="border-2">
-          {/* ... Header ... */}
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-3xl font-black tracking-tight">Interactive Verification</CardTitle>
-            <CardDescription className="text-base font-medium">
-              {stage === 'loading' && 'Initializing security layer...'}
-              {stage === 'intro' && 'Secure identity registration powered by AI'}
-              {stage === 'capturing' && (brightness < 40 ? '⚠️ Poor Lighting Detected' : livenessPrompts[livenessStep])}
-              {stage === 'processing' && 'Extracting mathematical face signature...'}
-              {stage === 'success' && 'Face registered successfully!'}
-              {stage === 'error' && 'Verification failed. Please retry.'}
-              {stage === 'insecure' && 'Browser security prevented camera access.'}
-            </CardDescription>
-          </CardHeader>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 overflow-x-hidden relative selection:bg-cyan-500/30">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-900/40 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/30 rounded-full blur-[120px] animate-pulse delay-1000" />
+        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] bg-indigo-900/20 rounded-full blur-[100px] animate-pulse delay-2000" />
+      </div>
 
-          <CardContent className="space-y-6">
-            {/* ... Video Area ... */}
-            <div className="relative aspect-[4/3] bg-black rounded-lg overflow-hidden border-2 border-primary/20">
-              {stage === 'loading' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <RefreshCw className="w-8 h-8 text-primary animate-spin" />
-                  <p className="text-sm text-muted-foreground">Loading AI Models...</p>
+      <div className="w-full max-w-4xl z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+
+        {/* LEFT COLUMN: GUIDANCE & INFO */}
+        <div className="space-y-8 order-2 lg:order-1 animate-slide-in-left">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+                <Fingerprint className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-sm font-bold tracking-widest uppercase text-cyan-400">Secure Identity</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter bg-gradient-to-br from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
+              Face ID Registration
+            </h1>
+            <p className="text-lg text-gray-400 font-medium leading-relaxed max-w-md">
+              Secure your account using advanced biometric verification. It takes less than 30 seconds.
+            </p>
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-4">
+            {[
+              { icon: Camera, title: "Positioning", desc: "Center your face in the frame", active: stage === 'capturing' },
+              { icon: Scan, title: "Liveness Check", desc: "Follow the movement prompts", active: stage === 'capturing' && livenessStep !== 'align' },
+              { icon: ShieldCheck, title: "Secure Store", desc: "Encryption & mathematical hashing", active: stage === 'success' }
+            ].map((item, idx) => (
+              <div key={idx} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${item.active ? 'bg-white/5 border-white/20 shadow-xl scale-105' : 'bg-transparent border-transparent opacity-50'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${item.active ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className={`font-bold ${item.active ? 'text-white' : 'text-gray-400'}`}>{item.title}</h3>
+                  <p className="text-xs text-gray-500">{item.desc}</p>
+                </div>
+                {item.active && <ChevronRight className="ml-auto w-5 h-5 text-cyan-500 animate-pulse" />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: MAIN INTERFACE */}
+        <div className="relative order-1 lg:order-2 animate-scale-in">
+          {/* Main Glass Card */}
+          <div className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-4 shadow-2xl overflow-hidden group hover:border-white/20 transition-all duration-500">
+
+            {/* Header Status */}
+            <div className="absolute top-8 left-0 right-0 z-20 text-center px-4">
+              {stage === 'capturing' && (
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 shadow-lg">
+                  <div className={`w-2 h-2 rounded-full ${brightness < 40 ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
+                  <span className="text-xs font-bold tracking-wide uppercase text-white/90">
+                    {brightness < 40 ? 'Low Light' : 'Camera Active'}
+                  </span>
                 </div>
               )}
+            </div>
 
-              {/* LIVE VIDEO VIEW (Always visible during capture) */}
+            {/* ERROR / SUCCESS OVERLAYS */}
+            {stage === 'success' && (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in text-center p-6">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-green-500/30 blur-[40px] rounded-full" />
+                  <CheckCircle className="w-24 h-24 text-green-400 relative z-10 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Verified!</h2>
+                <p className="text-gray-400 mb-8">Your face ID has been securely registered.</p>
+                <Button onClick={handleComplete} className="w-full max-w-sm bg-white text-black hover:bg-gray-200 font-bold h-12 rounded-xl shadow-xl">
+                  Continue to Dashboard
+                </Button>
+              </div>
+            )}
+
+            {stage === 'error' && (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-6 text-center">
+                <AlertCircle className="w-16 h-16 text-rose-500 mb-4" />
+                <h2 className="text-xl font-bold text-white mb-2">Registration Failed</h2>
+                <p className="text-sm text-gray-400 mb-6">We couldn't verify your face. Please try again in better lighting.</p>
+                <Button onClick={handleRetry} className="bg-white/10 hover:bg-white/20 text-white border border-white/20">
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {/* VIDEO CONTAINER */}
+            <div className={`relative aspect-[3/4] sm:aspect-[4/3] rounded-[2rem] overflow-hidden bg-gray-900 border border-white/5 shadow-inner ${stage === 'processing' ? 'opacity-50 blur-sm scale-95' : 'scale-100'} transition-all duration-500`}>
+
+              {/* VIDEO ELEMENT */}
               {(stage === 'intro' || stage === 'capturing') && (
                 <>
                   <video
@@ -469,228 +536,125 @@ const FaceRegistration = () => {
                     playsInline
                     className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
                   />
+                  <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
 
-                  {/* bKash-style Oval Mask */}
-                  <div className="absolute inset-0 pointer-events-none z-10">
-                    <div className="absolute inset-0 bg-black/60" style={{
-                      maskImage: 'radial-gradient(ellipse 40% 60% at 50% 50%, transparent 95%, black 100%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse 40% 60% at 50% 50%, transparent 95%, black 100%)'
-                    }} />
+                  {/* UI OVERLAYS FOR CAMERA */}
+                  <div className="absolute inset-0 pointer-events-none z-20">
+                    {/* Modern Oval */}
+                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] sm:w-[50%] sm:h-[65%] rounded-[50%] border-[3px] transition-all duration-300 backdrop-blur-[1px] ${facePosition ? 'border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.3)]' : 'border-white/20'}`}>
+                      {/* Scanning Line */}
+                      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_cyan] opacity-0 animate-scan-vertical"
+                        style={{ animationDuration: '2s', animationIterationCount: 'infinite', opacity: facePosition ? 1 : 0 }} />
 
-                    {/* Animated Oval Border */}
-                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[60%] border-4 rounded-[50%] transition-all duration-300 ${facePosition ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]' : 'border-white/30'}`}>
-                      {facePosition && (livenessStep === 'front' || livenessStep === 'left' || livenessStep === 'right') && (
-                        <div className="absolute inset-0 animate-pulse bg-green-500/10 rounded-[50%]" />
-                      )}
+                      {/* Corner Markers */}
+                      <div className="absolute top-4 left-0 w-0.5 h-6 bg-white/30" />
+                      <div className="absolute top-0 left-4 w-6 h-0.5 bg-white/30" />
+                      <div className="absolute top-4 right-0 w-0.5 h-6 bg-white/30" />
+                      <div className="absolute top-0 right-4 w-6 h-0.5 bg-white/30" />
                     </div>
+
+                    {/* Main Instruction Pill */}
+                    {stage === 'capturing' && (
+                      <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-2">
+                        {/* Warning Toast */}
+                        {brightness < 40 && (
+                          <div className="flex items-center gap-2 bg-amber-500/90 text-black px-4 py-2 rounded-full font-bold text-xs shadow-lg animate-bounce">
+                            <Sparkles className="w-3 h-3" /> Needs More Light
+                          </div>
+                        )}
+
+                        {/* Main Prompt */}
+                        <div className={`px-6 py-3 rounded-2xl font-bold text-lg shadow-2xl backdrop-blur-xl border transition-all duration-300 ${isCapturingAuto ? 'bg-green-500 text-black border-green-400 scale-110' :
+                          facePosition ? 'bg-black/50 text-white border-white/20' : 'bg-white/10 text-white/60 border-transparent'
+                          }`}>
+                          {isCapturingAuto ? "Hold Still... 📸" : (brightness < 40 ? "Move to Light" : livenessPrompts[livenessStep])}
+                        </div>
+
+                        {/* Progress Dots */}
+                        <div className="flex gap-2">
+                          {[0, 1, 2].map(i => (
+                            <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < capturedImages.length / 2 ? 'bg-cyan-400 w-6' : 'bg-white/20'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-20" />
-
-                  {/* Feedback Overlays */}
-                  {stage === 'capturing' && (
-                    <div className="absolute bottom-10 left-0 right-0 z-30 flex flex-col items-center gap-2">
-                      {brightness < 40 && (
-                        <div className="bg-yellow-500 text-black px-4 py-1.5 rounded-full text-xs font-bold animate-bounce shadow-lg">
-                          💡 Increase Lighting
-                        </div>
-                      )}
-                      {livenessStep === 'front' && facePosition && (
-                        <div className="bg-primary text-primary-foreground px-6 py-2 rounded-2xl text-sm font-black shadow-2xl animate-in zoom-in slide-in-from-bottom-5">
-                          Look Straight 😐
-                        </div>
-                      )}
-                      {livenessStep === 'left' && (
-                        <div className="bg-primary text-primary-foreground px-6 py-2 rounded-2xl text-sm font-black shadow-2xl animate-in zoom-in slide-in-from-bottom-5">
-                          Turn Head Left ⬅️
-                        </div>
-                      )}
-                      {livenessStep === 'right' && (
-                        <div className="bg-primary text-primary-foreground px-6 py-2 rounded-2xl text-sm font-black shadow-2xl animate-in zoom-in slide-in-from-bottom-5">
-                          Turn Head Right ➡️
-                        </div>
-                      )}
-                      {isCapturingAuto && (
-                        <div className="bg-green-600 text-white px-8 py-3 rounded-2xl text-lg font-black shadow-2xl animate-pulse">
-                          Capturing Burst... 📸
-                        </div>
-                      )}
-                      {!isStable && facePosition && !isCapturingAuto && (
-                        <div className="bg-orange-500 text-white px-6 py-2 rounded-2xl text-sm font-bold shadow-lg animate-pulse">
-                          Hold Still... ✋
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </>
               )}
-              {/* ... other status states ... */}
-              {stage === 'success' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 text-center animate-slide-up">
-                  <CheckCircle className="w-20 h-20 text-primary mx-auto mb-4" />
-                  <p className="text-lg font-medium text-foreground">Registration Successful</p>
+
+              {/* LOADING STATE - INITIAL */}
+              {stage === 'loading' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 border-4 border-white/10 border-t-cyan-500 rounded-full animate-spin mb-4" />
+                  <p className="text-cyan-500 font-mono text-xs uppercase tracking-widest animate-pulse">Initializing Neural Net</p>
                 </div>
               )}
 
-              {stage === 'error' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 text-center animate-slide-up p-4">
-                  <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
-                  <p className="text-lg font-medium text-foreground">Camera Error</p>
-                  <p className="text-sm text-muted-foreground mt-2">Could not access webcam. Please check permissions.</p>
+              {/* PROCESSING STATE */}
+              {stage === 'processing' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
+                  <div className="w-20 h-20 border-4 border-white/10 border-t-cyan-400 rounded-full animate-spin shadow-[0_0_40px_rgba(34,211,238,0.2)]" />
+                  <p className="mt-6 font-bold text-xl text-white tracking-tight animate-pulse">Analysing Biometrics...</p>
                 </div>
               )}
 
-              {/* ... insecure state ... */}
-              {stage === 'insecure' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/95 text-center animate-slide-up p-6">
-                  <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
-                  {/* ... content ... */}
-                  <p className="text-lg font-medium text-foreground">Security Block</p>
-                  {/* ... rest of insecure ... */}
-                  <div className="text-sm text-muted-foreground mt-4 space-y-3 text-left">
-                    <p>Browsers only allow camera access on <b>secure</b> connections.</p>
-                    <p><b>How to fix:</b></p>
-                    <ul className="list-disc pl-5">
-                      <li>Use <b>http://localhost:8081</b> instead of your IP address.</li>
-                      <li>Or, use <b>HTTPS</b> if you are accessing from another device.</li>
-                    </ul>
-                  </div>
-                  <Button variant="outline" className="mt-6" onClick={() => window.location.href = window.location.href.replace(window.location.hostname, 'localhost')}>
-                    Switch to Localhost
+              {/* INTRO START OVERLAY */}
+              {stage === 'intro' && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                  <Button onClick={startCapture} size="lg" className="bg-white text-black hover:bg-gray-200 hover:scale-105 transition-all duration-300 h-16 px-10 rounded-full text-lg font-black shadow-[0_0_40px_rgba(255,255,255,0.3)] group" disabled={!modelsLoaded}>
+                    <Scan className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
+                    Start Face Scan
                   </Button>
                 </div>
               )}
+
             </div>
 
-            {/* THUMBNAIL STRIP */}
-            {stage === 'capturing' && capturedImages.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto py-2">
-                {capturedImages.map((img, idx) => (
-                  <div key={img.id} className="relative w-20 h-20 rounded border overflow-hidden shrink-0 group">
+            {/* THUMBNAIL STRIP (Bottom) */}
+            {capturedImages.length > 0 && stage !== 'success' && (
+              <div className="mt-4 p-3 bg-white/5 border border-white/5 rounded-2xl flex gap-3 overflow-x-auto h-24 items-center px-4 custom-scrollbar">
+                {capturedImages.map((img, i) => (
+                  <div key={img.id} className="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-white/20 hover:border-cyan-400 transition-all cursor-pointer">
                     <img src={img.url} className="w-full h-full object-cover scale-x-[-1]" />
-                    <button
-                      onClick={() => removeImage(img.id)}
-                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                    >
-                      <XCircle className="text-white w-6 h-6" />
-                    </button>
-                    <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground text-[10px] px-1">
-                      {idx + 1}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                      onClick={() => removeImage(img.id)}>
+                      <XCircle className="w-6 h-6 text-white" />
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* PROGRESS & INSTRUCTIONS */}
-            {stage === 'capturing' && (
-              <div className="text-center space-y-4 animate-fade-in">
-                <div className="flex justify-between items-center px-2">
-                  <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Session Progress</span>
-                  <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    {Math.min(100, Math.floor((capturedImages.length / TOTAL_CAPTURES) * 100))}%
-                  </span>
-                </div>
-                <Progress value={Math.min(100, (capturedImages.length / TOTAL_CAPTURES) * 100)} className="h-3 rounded-full" />
-
-                <div className="grid grid-cols-3 gap-2 py-2">
-                  <div className={`p-2 rounded-xl border transition-all ${capturedImages.length >= 1 ? 'bg-green-50 border-green-200' : 'bg-muted border-transparent'}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full mx-auto mb-1 ${capturedImages.length >= 1 ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <div className="text-[8px] font-bold uppercase text-muted-foreground">Front</div>
-                  </div>
-                  <div className={`p-2 rounded-xl border transition-all ${capturedImages.length >= 2 ? 'bg-green-50 border-green-200' : 'bg-muted border-transparent'}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full mx-auto mb-1 ${capturedImages.length >= 2 ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <div className="text-[8px] font-bold uppercase text-muted-foreground">Left</div>
-                  </div>
-                  <div className={`p-2 rounded-xl border transition-all ${capturedImages.length >= 3 ? 'bg-green-50 border-green-200' : 'bg-muted border-transparent'}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full mx-auto mb-1 ${capturedImages.length >= 3 ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <div className="text-[8px] font-bold uppercase text-muted-foreground">Right</div>
-                  </div>
+                <div className="ml-auto text-xs text-right text-gray-500 font-mono">
+                  {capturedImages.length} / {TOTAL_CAPTURES} <br /> FRAMES
                 </div>
               </div>
             )}
 
-            {stage === 'processing' && (
-              <div className="text-center space-y-3 animate-fade-in">
-                <RefreshCw className="w-8 h-8 text-primary mx-auto animate-spin" />
-                <p className="text-muted-foreground">Scanning and verifying photos...</p>
+            {/* Footer Action */}
+            {stage === 'capturing' && livenessStep === 'done' && (
+              <div className="absolute bottom-8 left-8 right-8 z-40 animate-slide-up">
+                <Button onClick={handleScanAndSave} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white h-16 rounded-2xl text-xl font-bold border-0 shadow-[0_10px_40px_rgba(34,197,94,0.4)] transition-all transform hover:scale-[1.02] active:scale-[0.98]" disabled={isUploading}>
+                  {isUploading ? <RefreshCw className="w-6 h-6 animate-spin mr-2" /> : <ShieldCheck className="w-6 h-6 mr-2" />}
+                  Finish & Secure
+                </Button>
               </div>
             )}
 
-            {/* ACTION BUTTONS */}
-            <div className="flex gap-3 flex-col sm:flex-row">
-              {stage === 'intro' && (
-                <Button onClick={startCapture} className="w-full" size="lg" disabled={!modelsLoaded}>
-                  <Camera className="w-5 h-5 mr-2" />
-                  Start Face Scan
-                </Button>
-              )}
-
-              {stage === 'capturing' && livenessStep === 'done' && (
-                <Button onClick={handleScanAndSave} className="w-full bg-green-600 hover:bg-green-700 h-16 text-lg font-black shadow-lg shadow-green-200" size="lg" disabled={isUploading}>
-                  {isUploading ? <RefreshCw className="w-6 h-6 mr-3 animate-spin" /> : <CheckCircle className="w-6 h-6 mr-3" />}
-                  Verify & Finish Registration
-                </Button>
-              )}
-
-              {stage === 'success' && (
-                <Button onClick={handleComplete} className="w-full" size="lg">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Continue to Dashboard
-                </Button>
-              )}
-
-              {stage === 'error' && (
-                <Button onClick={handleRetry} variant="outline" className="w-full" size="lg">
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  Try Again
-                </Button>
-              )}
-            </div>
-
-            {stage === 'intro' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 bg-muted/50 p-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <Camera className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold leading-none mb-1">Interactive Guidance</p>
-                    <p className="text-[10px] text-muted-foreground">Animated oval frame helps you stay centered.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-muted/50 p-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold leading-none mb-1">Liveness Check</p>
-                    <p className="text-[10px] text-muted-foreground">Blink to verify you are a real person.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-muted/50 p-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <AlertCircle className="w-4 h-4 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold leading-none mb-1">Lighting Guard</p>
-                    <p className="text-[10px] text-muted-foreground">Blocks capture if it is too dark for the AI.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-muted/50 p-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                    <RefreshCw className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold leading-none mb-1">Auto-Capture</p>
-                    <p className="text-[10px] text-muted-foreground">High-quality frames snapped automatically.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+
+      {/* CSS Animation Injection for Scan Line */}
+      <style>{`
+        @keyframes scan-vertical {
+          0% { top: 10%; opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { top: 90%; opacity: 0; }
+        }
+        .animate-scan-vertical {
+          animation-name: scan-vertical;
+          animation-timing-function: linear;
+        }
+      `}</style>
     </div>
   );
 };
