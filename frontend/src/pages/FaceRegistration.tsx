@@ -136,10 +136,14 @@ const FaceRegistration = () => {
           const canvasCenterX = displaySize.width / 2;
           const canvasCenterY = displaySize.height / 2;
 
-          // Increase tolerance to 80px for easier alignment
+          // Responsive tolerance: 15% of screen width/height
+          // This prevents "pin point" errors on different screen densities
+          const toleranceX = displaySize.width * 0.15;
+          const toleranceY = displaySize.height * 0.15;
+
           const isCentered =
-            Math.abs(faceCenterX - canvasCenterX) < 80 &&
-            Math.abs(faceCenterY - canvasCenterY) < 80;
+            Math.abs(faceCenterX - canvasCenterX) < toleranceX &&
+            Math.abs(faceCenterY - canvasCenterY) < toleranceY;
 
           // Adjustment: Ensure the face is large enough but not too large
           const isRightSize = box.width > displaySize.width * 0.25 && box.width < displaySize.width * 0.7;
@@ -222,16 +226,25 @@ const FaceRegistration = () => {
 
   const checkBrightness = (video: HTMLVideoElement) => {
     const canvas = document.createElement('canvas');
-    canvas.width = 40; canvas.height = 40;
+    canvas.width = 50; canvas.height = 50;
     const ctx = canvas.getContext('2d');
     if (!ctx) return 150;
-    ctx.drawImage(video, 0, 0, 40, 40);
-    const data = ctx.getImageData(0, 0, 40, 40).data;
+
+    // Center crop: take middle 50% of the video
+    // This prevents dark backgrounds from flagging "poor lighting" when the face is well-lit
+    const sWidth = video.videoWidth * 0.5;
+    const sHeight = video.videoHeight * 0.5;
+    const sx = (video.videoWidth - sWidth) / 2;
+    const sy = (video.videoHeight - sHeight) / 2;
+
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, 50, 50);
+
+    const data = ctx.getImageData(0, 0, 50, 50).data;
     let sum = 0;
     for (let i = 0; i < data.length; i += 4) {
       sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
     }
-    return sum / (40 * 40);
+    return sum / (50 * 50);
   };
 
   const autoCaptureBurst = async (pose: 'front' | 'left' | 'right') => {
@@ -428,7 +441,7 @@ const FaceRegistration = () => {
             <CardDescription className="text-base font-medium">
               {stage === 'loading' && 'Initializing security layer...'}
               {stage === 'intro' && 'Secure identity registration powered by AI'}
-              {stage === 'capturing' && (brightness < 70 ? '⚠️ Poor Lighting Detected' : livenessPrompts[livenessStep])}
+              {stage === 'capturing' && (brightness < 40 ? '⚠️ Poor Lighting Detected' : livenessPrompts[livenessStep])}
               {stage === 'processing' && 'Extracting mathematical face signature...'}
               {stage === 'success' && 'Face registered successfully!'}
               {stage === 'error' && 'Verification failed. Please retry.'}
@@ -477,7 +490,7 @@ const FaceRegistration = () => {
                   {/* Feedback Overlays */}
                   {stage === 'capturing' && (
                     <div className="absolute bottom-10 left-0 right-0 z-30 flex flex-col items-center gap-2">
-                      {brightness < 70 && (
+                      {brightness < 40 && (
                         <div className="bg-yellow-500 text-black px-4 py-1.5 rounded-full text-xs font-bold animate-bounce shadow-lg">
                           💡 Increase Lighting
                         </div>

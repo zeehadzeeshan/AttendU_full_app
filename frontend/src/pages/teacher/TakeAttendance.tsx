@@ -98,7 +98,12 @@ const TakeAttendance = () => {
             if (step === 'camera') {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 3840 },
+                            height: { ideal: 2160 },
+                            frameRate: { ideal: 60 }
+                        }
                     });
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
