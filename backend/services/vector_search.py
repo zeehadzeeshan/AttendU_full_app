@@ -71,9 +71,12 @@ class VectorSearch:
             faiss.write_index(self.index, self.index_path)
             with open(self.mapping_path, 'wb') as f:
                 pickle.dump(self.id_mapping, f)
-            print(f"✅ FAISS index saved with {self.index.ntotal} vectors.")
+            print(f"✅ FAISS index saved locally ({self.index.ntotal} vectors).")
         except Exception as e:
-            print(f"❌ Failed to save FAISS index: {e}")
+            # On some cloud platforms (like Hugging Face), the root directory is read-only.
+            # This is OK because we sync from Supabase database on startup anyway.
+            print(f"ℹ️ Local FAISS cache not saved: {e}")
+            print("💡 This is normal on some servers. The system will sync from Supabase on restart.")
 
     def load_index(self):
         """

@@ -142,7 +142,7 @@ async def recognize_face(image: UploadFile = File(...)):
                 "message": "No faces detected"
             }
 
-        THRESHOLD = 3.0 
+        THRESHOLD = 1.4 
         matches = []
         
         # 2. Search each face in FAISS

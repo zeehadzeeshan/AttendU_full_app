@@ -36,7 +36,7 @@ const TakeAttendance = () => {
     const [isTracking, setIsTracking] = useState(false);
     const [backendStatus, setBackendStatus] = useState<'online' | 'error' | 'loading'>('online');
 
-    const RECOGNITION_THRESHOLD = 0.1;
+    const RECOGNITION_THRESHOLD = 0.4;
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
