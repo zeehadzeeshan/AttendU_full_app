@@ -86,10 +86,32 @@ const FaceRegistration = () => {
         return;
       }
 
-      navigator.mediaDevices.getUserMedia({ video: true })
+
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          // @ts-ignore
+          focusMode: 'continuous',
+          // @ts-ignore
+          advanced: [{ focusMode: 'continuous' }]
+        }
+      })
         .then(s => {
           stream = s;
-          if (videoRef.current) videoRef.current.srcObject = s;
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+
+            // Enable continuous autofocus
+            const videoTrack = s.getVideoTracks()[0];
+            if (videoTrack) {
+              videoTrack.applyConstraints({
+                // @ts-ignore
+                advanced: [{ focusMode: 'continuous' }]
+              }).catch(() => { });
+            }
+          }
         })
         .catch(err => {
           console.error("Webcam error:", err);
