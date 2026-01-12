@@ -95,7 +95,8 @@ const RoutineManagement = () => {
         try {
             await api.createRoutine({
                 teacher_id: selectedTeacher,
-                subject_id: selectedSubject,
+                section_id: selectedSection,
+                course_catalog_id: selectedSubject,
                 day_of_week: day,
                 start_time: startTime,
                 end_time: endTime,
@@ -223,9 +224,15 @@ const RoutineManagement = () => {
                                         <Select value={selectedSubject} onValueChange={setSelectedSubject} disabled={!selectedSection}>
                                             <SelectTrigger><SelectValue placeholder="Subject" /></SelectTrigger>
                                             <SelectContent>
-                                                {subjects.filter(s => s.section_id === selectedSection).map((s) => (
-                                                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
-                                                ))}
+                                                {subjects
+                                                    .filter(s => {
+                                                        const section = sections.find(sec => sec.id === selectedSection);
+                                                        const batch = batches.find(b => b.id === section?.batch_id);
+                                                        return s.faculty_id === batch?.faculty_id && s.semester_level === batch?.current_semester;
+                                                    })
+                                                    .map((s) => (
+                                                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                                                    ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -300,17 +307,17 @@ const RoutineManagement = () => {
                         {routines
                             .filter(routine => {
                                 // 1. Filter by Dept
-                                if (filterDept !== 'all' && routine.subject?.section?.batch?.faculty_id !== filterDept) return false;
+                                if (filterDept !== 'all' && routine.section?.batch?.faculty_id !== filterDept) return false;
 
                                 // 2. Filter by Batch
-                                if (filterBatch !== 'all' && routine.subject?.section?.batch_id !== filterBatch) return false;
+                                if (filterBatch !== 'all' && routine.section?.batch_id !== filterBatch) return false;
 
                                 // 3. Filter by Search Query
                                 if (searchQuery) {
                                     const q = searchQuery.toLowerCase();
-                                    const subjectName = routine.subject?.name?.toLowerCase() || '';
-                                    const subjectCode = routine.subject?.code?.toLowerCase() || '';
-                                    const teacherName = routine.teacher?.name?.toLowerCase() || '';
+                                    const subjectName = routine.course_catalog?.subject_name?.toLowerCase() || '';
+                                    const subjectCode = routine.course_catalog?.subject_code?.toLowerCase() || '';
+                                    const teacherName = routine.teacher?.profile?.name?.toLowerCase() || '';
                                     return subjectName.includes(q) || subjectCode.includes(q) || teacherName.includes(q);
                                 }
                                 return true;
@@ -321,13 +328,13 @@ const RoutineManagement = () => {
                                     <TableCell>{routine.start_time?.slice(0, 5)} - {routine.end_time?.slice(0, 5)}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span>{routine.subject?.name}</span>
-                                            <span className="text-xs text-muted-foreground">{routine.subject?.code}</span>
+                                            <span>{routine.course_catalog?.subject_name}</span>
+                                            <span className="text-xs text-muted-foreground">{routine.course_catalog?.subject_code}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{routine.teacher?.name}</TableCell>
+                                    <TableCell>{routine.teacher?.profile?.name}</TableCell>
                                     <TableCell>
-                                        {routine.subject?.section?.batch?.name} - {routine.subject?.section?.name}
+                                        {routine.section?.batch?.name} - {routine.section?.name}
                                     </TableCell>
                                     <TableCell>{routine.room_id || 'N/A'}</TableCell>
                                     <TableCell className="text-right">

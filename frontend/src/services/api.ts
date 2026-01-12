@@ -13,6 +13,14 @@ export interface CourseCatalogItem {
   subject_code: string;
   is_lab: boolean;
 }
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  faculty_id?: string;
+  semester_level?: number;
+  section_id?: string;
+}
 export interface Profile { id: string; email: string; name: string; role: UserRole; }
 
 export const api = {
@@ -128,13 +136,26 @@ export const api = {
     return data as CourseCatalogItem[];
   },
 
-  getSubjects: async (sectionId: string) => {
-    const catalog = await api.getSubjectsForSection(sectionId);
-    return catalog.map(c => ({
-      id: c.id,
-      name: c.subject_name,
-      code: c.subject_code
-    }));
+  getSubjects: async (sectionId?: string) => {
+    let catalog: CourseCatalogItem[] = [];
+    if (sectionId) {
+      catalog = await api.getSubjectsForSection(sectionId);
+      return catalog.map(c => ({
+        id: c.id,
+        name: c.subject_name,
+        code: c.subject_code,
+        section_id: sectionId
+      }));
+    } else {
+      catalog = await api.getCourseCatalog();
+      return catalog.map(c => ({
+        id: c.id,
+        name: c.subject_name,
+        code: c.subject_code,
+        faculty_id: c.faculty_id,
+        semester_level: c.semester_level
+      }));
+    }
   },
   // Users
   getProfiles: async (role?: UserRole) => {

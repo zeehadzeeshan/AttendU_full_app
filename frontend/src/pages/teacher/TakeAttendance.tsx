@@ -38,6 +38,7 @@ const TakeAttendance = () => {
     const [isProcessingBatch, setIsProcessingBatch] = useState(false);
     const [lastMatchedName, setLastMatchedName] = useState<string | null>(null);
     const [isTracking, setIsTracking] = useState(false);
+    const [videoReady, setVideoReady] = useState(false);
     const [backendStatus, setBackendStatus] = useState<'online' | 'error' | 'loading'>('online');
 
     const RECOGNITION_THRESHOLD = 0.2;
@@ -139,6 +140,8 @@ const TakeAttendance = () => {
                     });
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
+                        videoRef.current.setAttribute('playsinline', 'true');
+                        videoRef.current.play().catch(e => console.error("Video play error:", e));
                         setIsDetecting(true);
                     }
                 } catch (err) {
@@ -308,7 +311,7 @@ const TakeAttendance = () => {
         }, 20000);
 
         detectionInterval.current = setInterval(async () => {
-            if (!isTracking || !videoRef.current || !canvasRef.current) return;
+            if (!isTracking || !videoRef.current || !canvasRef.current || !videoReady) return;
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = videoRef.current.videoWidth;
@@ -566,6 +569,8 @@ const TakeAttendance = () => {
                                 autoPlay
                                 muted
                                 playsInline
+                                onLoadedMetadata={() => setVideoReady(true)}
+                                onPlay={() => setVideoReady(true)}
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
                             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />

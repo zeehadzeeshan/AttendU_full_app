@@ -39,6 +39,7 @@ const FaceRegistration = () => {
   const [facePosition, setFacePosition] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
   const [isCapturingAuto, setIsCapturingAuto] = useState(false);
   const [isStable, setIsStable] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const noseHistory = useRef<{ x: number, y: number }[]>([]);
 
   const livenessPrompts = {
@@ -104,6 +105,11 @@ const FaceRegistration = () => {
           if (videoRef.current) {
             videoRef.current.srcObject = s;
 
+            // iOS Safari requires explicit play() call and certain attributes
+            videoRef.current.setAttribute('playsinline', 'true');
+            videoRef.current.setAttribute('muted', 'true');
+            videoRef.current.play().catch(e => console.error("Video play error:", e));
+
             // Enable continuous autofocus
             const videoTrack = s.getVideoTracks()[0];
             if (videoTrack) {
@@ -131,12 +137,18 @@ const FaceRegistration = () => {
     let lastEAR = 1.0;
 
     const track = async () => {
-      if (!videoRef.current || !canvasRef.current || !modelsLoaded || stage !== 'capturing') return;
+      if (!videoRef.current || !canvasRef.current || !modelsLoaded || stage !== 'capturing' || !videoReady) return;
 
-      // Detection
+      // Ensure video is actually playing and has dimensions (Critical for iOS Safari)
+      if (videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
+        requestAnimationFrame(track);
+        return;
+      }
+
+      // Detection - Optimized for mobile (lower inputSize)
       const detection = await faceapi.detectSingleFace(
         videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
+        new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 })
       ).withFaceLandmarks(true);
 
       if (active && canvasRef.current && videoRef.current) {
@@ -595,6 +607,8 @@ const FaceRegistration = () => {
                     autoPlay
                     muted
                     playsInline
+                    onLoadedMetadata={() => setVideoReady(true)}
+                    onPlay={() => setVideoReady(true)}
                     className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
                   />
                   <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
