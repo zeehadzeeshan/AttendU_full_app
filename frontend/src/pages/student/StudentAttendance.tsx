@@ -19,25 +19,42 @@ import { toast } from "sonner";
 
 const StudentAttendance = () => {
     const { user } = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
-    const [history, setHistory] = useState<any[]>([]);
-    const [subjects, setSubjects] = useState<any[]>([]);
+    const [history, setHistory] = useState<any[]>(() => {
+        const cached = localStorage.getItem(`attendance_history_${user?.id}`);
+        return cached ? JSON.parse(cached) : [];
+    });
+    const [subjects, setSubjects] = useState<any[]>(() => {
+        const cached = localStorage.getItem(`attendance_subjects_${user?.id}`);
+        return cached ? JSON.parse(cached) : [];
+    });
     const [selectedSubject, setSelectedSubject] = useState<any | null>(null);
+
+    // Initial loading should only be true if we don't have cached data
+    const [isLoading, setIsLoading] = useState(!history.length);
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!user?.id) return;
-            setIsLoading(true);
+            const studentId = (user as any)?.student_id;
+            const sectionId = (user as any)?.section_id;
+
+            if (!studentId || !sectionId) return;
+
             try {
-                const student = await api.getStudentByProfileId(user.id);
                 const [historyData, subjectsData] = await Promise.all([
-                    api.getAttendanceHistory({ student_id: student.id }),
-                    api.getSubjects(student.section_id)
+                    api.getAttendanceHistory({ student_id: studentId }),
+                    api.getSubjects(sectionId)
                 ]);
+
                 setHistory(historyData || []);
                 setSubjects(subjectsData || []);
+
+                // Cache for next time
+                localStorage.setItem(`attendance_history_${user?.id}`, JSON.stringify(historyData || []));
+                localStorage.setItem(`attendance_subjects_${user?.id}`, JSON.stringify(subjectsData || []));
             } catch (e) {
-                toast.error("Failed to load attendance data");
+                console.error("Fetcher error:", e);
+                // Only show toast if we have no data at all
+                if (!history.length) toast.error("Failed to load attendance data");
             } finally {
                 setIsLoading(false);
             }

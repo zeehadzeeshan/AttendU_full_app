@@ -28,9 +28,12 @@ import {
 } from "@/components/ui/dialog";
 
 const AttendanceManagement = () => {
-    const [records, setRecords] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [selectedSession, setSelectedSession] = useState<any>(null);
+    const [records, setRecords] = useState<any[]>(() => {
+        const cached = localStorage.getItem('cache_admin_attendance');
+        return cached ? JSON.parse(cached) : [];
+    });
+    const [isLoading, setIsLoading] = useState(!records.length);
 
     // Filter states
     const [faculties, setFaculties] = useState<Faculty[]>([]);

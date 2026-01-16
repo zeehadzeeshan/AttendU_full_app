@@ -279,7 +279,7 @@ export const api = {
   },
 
   // Routines
-  getRoutines: async (filters?: { teacher_id?: string; day?: string }) => {
+  getRoutines: async (filters?: { teacher_id?: string; section_id?: string; day?: string }) => {
     let query = supabase.from('routines').select(`
       *,
       course_catalog:course_catalog_id (
@@ -296,6 +296,7 @@ export const api = {
     `);
 
     if (filters?.teacher_id) query = query.eq('teacher_id', filters.teacher_id);
+    if (filters?.section_id) query = query.eq('section_id', filters.section_id);
     if (filters?.day) query = query.eq('day_of_week', filters.day);
 
     const { data, error } = await query;

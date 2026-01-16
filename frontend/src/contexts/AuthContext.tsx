@@ -139,9 +139,34 @@ export const LoadingScreen = () => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUserState] = useState<any>(() => {
+    const cached = localStorage.getItem('auth_user');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [role, setRoleState] = useState<UserRole | null>(() => {
+    return localStorage.getItem('auth_role') as UserRole | null;
+  });
+  const [isAuthenticated, setIsAuthenticatedState] = useState<boolean>(() => {
+    return localStorage.getItem('auth_isAuthenticated') === 'true';
+  });
+
+  const setUser = (user: any) => {
+    setUserState(user);
+    if (user) localStorage.setItem('auth_user', JSON.stringify(user));
+    else localStorage.removeItem('auth_user');
+  };
+
+  const setRole = (role: UserRole | null) => {
+    setRoleState(role);
+    if (role) localStorage.setItem('auth_role', role);
+    else localStorage.removeItem('auth_role');
+  };
+
+  const setIsAuthenticated = (isAuth: boolean) => {
+    setIsAuthenticatedState(isAuth);
+    localStorage.setItem('auth_isAuthenticated', isAuth.toString());
+  };
+
   const [selectedRole, setSelectedRoleState] = useState<UserRole | null>(() => {
     return localStorage.getItem('selectedRole') as UserRole | null;
   });
@@ -155,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   const [pendingStudentId, setPendingStudentId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isAuthenticated); // Optimistic loading if cached
   const syncLock = React.useRef(false);
 
   const syncProfile = async (sessionUser: any, retryCount = 0): Promise<boolean> => {
@@ -166,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: profile, error } = (await withTimeout(
         supabase
           .from('profiles')
-          .select('*, students(id, face_registered), teachers(id)')
+          .select('*, students(id, face_registered, section_id), teachers(id)')
           .eq('id', sessionUser.id)
           .maybeSingle(),
         5000,
@@ -188,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (role === 'student' && profile.students?.[0]) {
         extraData = {
           student_id: profile.students[0].id,
+          section_id: profile.students[0].section_id,
           face_registered: profile.students[0].face_registered
         };
       } else if (role === 'teacher' && profile.teachers?.[0]) {
@@ -371,13 +397,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    setUser(null);
-    setRole(null);
-    setIsAuthenticated(false);
+    // 1. Immediately clear memory state
+    setUserState(null);
+    setRoleState(null);
+    setIsAuthenticatedState(false);
+    setSelectedRoleState(null);
+
+    // 2. Aggressively clear ALL relevant localStorage keys
+    const keysToRemove = [
+      'auth_user',
+      'auth_role',
+      'auth_isAuthenticated',
+      'selectedRole',
+      'sb-attendance-auth-token' // Standard Supabase auth token key
+    ];
+
+    // Also clear all application cache keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('cache_') || key.startsWith('auth_') || key.includes('supabase.auth'))) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
     try {
+      // 3. Force sign out from Supabase (global scope to clear all sessions)
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Signout error:", err);
+    } finally {
+      // 4. Force a hard reload to the home page to clear any in-memory state or listeners
+      window.location.href = '/';
     }
   };
 

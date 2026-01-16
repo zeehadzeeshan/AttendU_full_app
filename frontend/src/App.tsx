@@ -23,6 +23,7 @@ import PastAttendance from "./pages/teacher/PastAttendance";
 import StudentLayout from "./layouts/StudentLayout";
 import StudentAttendance from "./pages/student/StudentAttendance";
 import StudentProfile from "./pages/student/StudentProfile";
+import StudentRoutine from "./pages/student/StudentRoutine";
 
 const App = () => (
   <AppProvider>
@@ -65,6 +66,7 @@ const App = () => (
             <Route index element={<Navigate to="/student/attendance" replace />} />
             <Route path="attendance" element={<StudentAttendance />} />
             <Route path="profile" element={<StudentProfile />} />
+            <Route path="routine" element={<StudentRoutine />} />
           </Route>
         </Route>
 
