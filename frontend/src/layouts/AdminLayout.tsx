@@ -125,7 +125,7 @@ const AdminLayout = () => {
                     <div className="flex-1">
                         <Outlet />
                     </div>
-                    <Footer />
+                    <Footer variant="light" />
                 </main>
             </div>
         </div>

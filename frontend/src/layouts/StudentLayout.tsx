@@ -173,7 +173,7 @@ const StudentLayout = () => {
                 </div>
 
                 <div className="px-4 sm:px-10 pb-10">
-                    <Footer />
+                    <Footer variant="light" />
                 </div>
             </main>
 

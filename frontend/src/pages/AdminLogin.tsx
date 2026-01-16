@@ -47,31 +47,40 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md animate-fade-in">
+    <div className="relative min-h-screen bg-black flex flex-col items-center justify-center p-4">
+      {/* Grid Background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(100, 100, 100, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 100, 100, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px'
+        }}
+      />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-md animate-fade-in">
         <Button
           variant="ghost"
-          className="self-start mb-6 hover:bg-muted transition-colors"
-          onClick={() => navigate('/')}
+          className="self-start mb-6 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+          onClick={() => navigate(-1)}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
+          Back
         </Button>
 
-        <Card className="w-full border-0 shadow-2xl overflow-hidden">
+        <Card className="w-full border border-white/10 bg-black/40 shadow-2xl backdrop-blur-xl overflow-hidden ring-1 ring-white/5">
           <CardHeader className="text-center pb-2">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
-              <Shield className="w-8 h-8 text-primary" />
-            </div>
-            <CardTitle className="text-3xl font-bold tracking-tight">Login as Admin</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-3xl font-bold tracking-tight text-white">Login as Admin</CardTitle>
+            <CardDescription className="text-gray-400">
               Authorized personnel only
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Admin Email</Label>
+                <Label htmlFor="email" className="text-gray-300">Admin Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -83,7 +92,7 @@ const AdminLogin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-gray-300">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -92,20 +101,20 @@ const AdminLogin = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-11"
+                    className="h-11 border-white/10 bg-white/5 text-white placeholder:text-gray-500 focus:border-indigo-500/50 focus:ring-indigo-500/50"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:bg-transparent hover:text-white"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/20 transition-all font-semibold mt-2" disabled={isLoading}>
+              <Button type="submit" className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-indigo-500/20 transition-all font-semibold mt-2" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Login as Admin'}
               </Button>
             </form>

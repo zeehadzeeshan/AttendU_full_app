@@ -210,39 +210,51 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-      <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
+    <div className="relative min-h-screen flex flex-col bg-black">
+      {/* Grid Background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(100, 100, 100, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 100, 100, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px'
+        }}
+      />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
         <div className="w-full max-w-md my-8 animate-fade-in">
           <Button
             variant="ghost"
-            className="mb-4 text-slate-500 hover:text-primary transition-colors group"
-            onClick={() => navigate('/')}
+            className="mb-4 text-gray-400 hover:text-white hover:bg-white/5 transition-colors group"
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
-            Back to Roles
+            Back
           </Button>
-          <Card className="w-full border-0 shadow-2xl overflow-hidden rounded-3xl bg-card/50 backdrop-blur-xl ring-1 ring-white/10">
+          <Card className="w-full border border-white/10 bg-black/40 shadow-2xl overflow-hidden rounded-3xl backdrop-blur-xl ring-1 ring-white/5">
             <CardHeader className="text-center pb-4 pt-8 bg-gradient-to-b from-primary/10 to-transparent">
-              <CardTitle className="text-3xl font-bold tracking-tight capitalize py-1">
+              <CardTitle className="text-3xl font-bold tracking-tight capitalize py-1 text-white">
                 {activeTab === 'login' ? `Login as ${selectedRole}` : `Sign up as ${selectedRole}`}
               </CardTitle>
-              <CardDescription className="text-base font-medium">
-                Access your <span className="font-bold text-primary capitalize">{selectedRole}</span> portal
+              <CardDescription className="text-base font-medium text-gray-400">
+                Access your <span className="font-bold text-indigo-400 capitalize">{selectedRole}</span> portal
                 {lastError && <div className="text-destructive text-sm mt-3 font-semibold bg-destructive/10 p-3 rounded-lg border border-destructive/20">{lastError}</div>}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-8 pt-2">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 rounded-xl mb-8 border border-border/50">
+                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-white/5 rounded-xl mb-8 border border-white/10">
                   <TabsTrigger
                     value="login"
-                    className="text-sm font-semibold pt-[0.6rem] pb-[0.5rem] rounded-[0.5rem] transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    className="text-sm font-semibold pt-[0.6rem] pb-[0.5rem] rounded-[0.5rem] transition-all data-[state=active]:bg-white/10 data-[state=active]:text-indigo-400 data-[state=active]:shadow-sm text-gray-400"
                   >
                     Login
                   </TabsTrigger>
                   <TabsTrigger
                     value="signup"
-                    className="text-sm font-semibold pt-[0.6rem] pb-[0.5rem] rounded-[0.5rem] transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    className="text-sm font-semibold pt-[0.6rem] pb-[0.5rem] rounded-[0.5rem] transition-all data-[state=active]:bg-white/10 data-[state=active]:text-indigo-400 data-[state=active]:shadow-sm text-gray-400"
                   >
                     Sign Up
                   </TabsTrigger>

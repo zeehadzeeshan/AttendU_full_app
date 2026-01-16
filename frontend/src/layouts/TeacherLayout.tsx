@@ -184,7 +184,7 @@ const TeacherLayout = () => {
                     <div className="max-w-7xl mx-auto w-full space-y-8">
                         <Outlet />
                         <div className="mt-12 pt-8 border-t border-slate-100">
-                            <Footer />
+                            <Footer variant="light" />
                         </div>
                     </div>
                 </main>

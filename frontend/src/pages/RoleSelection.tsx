@@ -47,40 +47,50 @@ const RoleSelection = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background via-muted/30 to-background flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen w-full bg-black flex flex-col">
+      {/* Grid Background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(100, 100, 100, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 100, 100, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px'
+        }}
+      />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md animate-fade-in">
-          <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm ring-1 ring-white/10">
-            <CardHeader className="text-center space-y-4 pb-8">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
-                <UserCircle2 className="w-8 h-8 text-primary" />
-              </div>
+          <Card className="border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl ring-1 ring-white/5">
+            <CardHeader className="text-center space-y-2 pb-6 pt-8">
+
               <div className="space-y-2">
-                <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight">
+                <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight text-white">
                   Welcome Back
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-base text-gray-400">
                   Please select your role to continue
                 </CardDescription>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label className="text-sm font-medium leading-none text-gray-300">
                   I am a...
                 </label>
                 <Select onValueChange={(value) => setRole(value)}>
-                  <SelectTrigger className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20">
+                  <SelectTrigger className="h-12 border-white/10 bg-white/5 text-white text-base transition-all duration-200 hover:bg-white/10 focus:ring-2 focus:ring-indigo-500/50">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student" className="h-10 cursor-pointer">
+                  <SelectContent className="border-white/10 bg-black/95 backdrop-blur-xl">
+                    <SelectItem value="student" className="h-10 cursor-pointer text-white hover:bg-white/10 focus:bg-white/10">
                       Student
                     </SelectItem>
-                    <SelectItem value="teacher" className="h-10 cursor-pointer">
+                    <SelectItem value="teacher" className="h-10 cursor-pointer text-white hover:bg-white/10 focus:bg-white/10">
                       Teacher
                     </SelectItem>
-                    <SelectItem value="admin" className="h-10 cursor-pointer">
+                    <SelectItem value="admin" className="h-10 cursor-pointer text-white hover:bg-white/10 focus:bg-white/10">
                       Administrator
                     </SelectItem>
                   </SelectContent>
@@ -88,7 +98,7 @@ const RoleSelection = () => {
               </div>
 
               <Button
-                className="w-full h-11 text-base font-medium shadow-lg hover:shadow-primary/25 transition-all duration-300"
+                className="w-full h-11 text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-indigo-500/25 transition-all duration-300"
                 size="lg"
                 onClick={handleContinue}
                 disabled={!role}
@@ -97,10 +107,6 @@ const RoleSelection = () => {
               </Button>
             </CardContent>
           </Card>
-
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            University Attendance System v1.0
-          </p>
         </div>
       </div>
       <Footer />

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/providers/AppProvider";
+import Home from "./pages/Home";
 import RoleSelection from "./pages/RoleSelection";
 import AuthPage from "./pages/AuthPage";
 import AdminLogin from "./pages/AdminLogin";
@@ -27,7 +28,8 @@ const App = () => (
   <AppProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RoleSelection />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/face-registration" element={<FaceRegistration />} />
